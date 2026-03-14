@@ -30,7 +30,7 @@ import {
   ITEM_TYPES,
   ITEM_TYPE_COUNTS,
   FAVORITE_COLLECTIONS,
-  COLLECTIONS,
+  ALL_COLLECTIONS,
   CURRENT_USER,
 } from "@/lib/mock-data";
 import type { ItemType } from "@/lib/mock-data";
@@ -55,7 +55,8 @@ const ICON_MAP: Record<string, IconComponent> = {
 
 // ─── Derived data ─────────────────────────────────────────────────────────────
 
-const RECENT_COLLECTIONS = [...COLLECTIONS]
+// Recent collections: non-favorites only, sorted by updatedAt desc (matches sidebar spec)
+const RECENT_COLLECTIONS = [...ALL_COLLECTIONS]
   .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   .slice(0, 5);
 
@@ -183,7 +184,9 @@ function SidebarContent({ isOpen }: { isOpen: boolean }) {
       <div className="border-t border-border px-3 py-3">
         <div className="flex items-center gap-2">
           <Avatar className="h-7 w-7 shrink-0">
-            <AvatarImage src={CURRENT_USER.image ?? ""} alt={CURRENT_USER.name} />
+            {CURRENT_USER.image && (
+              <AvatarImage src={CURRENT_USER.image} alt={CURRENT_USER.name} />
+            )}
             <AvatarFallback className="text-xs">
               {getInitials(CURRENT_USER.name)}
             </AvatarFallback>
