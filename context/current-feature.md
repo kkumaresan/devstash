@@ -6,7 +6,7 @@ Dashboard UI Phase 1
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
@@ -31,3 +31,4 @@ Reference screenshot: @context/screenshots/dashboard-ui-main.png
 <!-- Keep this updated. Earliest to latest -->
 
 - Project setup and boilerplate cleanup
+- Dashboard UI Phase 1: shadcn/ui init, /dashboard route, layout shell, dark mode, display-only top bar
