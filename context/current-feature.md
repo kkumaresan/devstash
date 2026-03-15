@@ -28,3 +28,4 @@ Not Started
 - Seed data: demo user, 7 system item types, 5 collections (React Patterns, AI Workflows, DevOps, Terminal Commands, Design Resources)
 - Dashboard collections: replace mock data with real DB data, derive card border color from dominant item type, show type icons per card
 - Dashboard items: replace mock item data with real DB queries, split page components into individual files
+- Stats & Sidebar: replace mock sidebar data with real DB queries, item types with counts, favorite/recent collections, colored circles for recents, "View all collections" link

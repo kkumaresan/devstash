@@ -26,14 +26,8 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "./SidebarContext";
-import {
-  ITEM_TYPES,
-  ITEM_TYPE_COUNTS,
-  FAVORITE_COLLECTIONS,
-  ALL_COLLECTIONS,
-  CURRENT_USER,
-} from "@/lib/mock-data";
-import type { ItemType } from "@/lib/mock-data";
+import type { SidebarItemType } from "@/lib/db/items";
+import type { SidebarCollection } from "@/lib/db/collections";
 
 // ─── Icon Map ────────────────────────────────────────────────────────────────
 
@@ -53,12 +47,36 @@ const ICON_MAP: Record<string, IconComponent> = {
   Image,
 };
 
-// ─── Derived data ─────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-// Recent collections: non-favorites only, sorted by updatedAt desc (matches sidebar spec)
-const RECENT_COLLECTIONS = [...ALL_COLLECTIONS]
-  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-  .slice(0, 5);
+/** Desired sidebar order + plural display names (keyed by DB name) */
+const TYPE_DISPLAY: Record<string, { label: string; order: number }> = {
+  snippet: { label: "Snippets", order: 0 },
+  prompt:  { label: "Prompts",  order: 1 },
+  command: { label: "Commands", order: 2 },
+  note:    { label: "Notes",    order: 3 },
+  file:    { label: "Files",    order: 4 },
+  image:   { label: "Images",   order: 5 },
+  link:    { label: "Links",    order: 6 },
+};
+
+function sortedItemTypes(types: SidebarItemType[]): SidebarItemType[] {
+  return [...types].sort((a, b) => {
+    const oa = TYPE_DISPLAY[a.name]?.order ?? 99;
+    const ob = TYPE_DISPLAY[b.name]?.order ?? 99;
+    return oa - ob;
+  });
+}
+
+function displayName(name: string): string {
+  return TYPE_DISPLAY[name]?.label ?? name;
+}
+
+const CURRENT_USER = {
+  name: "Demo User",
+  email: "demo@devstash.io",
+  image: undefined as string | undefined,
+};
 
 function getInitials(name: string): string {
   return name
@@ -69,15 +87,22 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+// ─── Props ───────────────────────────────────────────────────────────────────
+
+interface SidebarProps {
+  itemTypes: SidebarItemType[];
+  favoriteCollections: SidebarCollection[];
+  recentCollections: SidebarCollection[];
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TypeItem({ type, isOpen }: { type: ItemType; isOpen: boolean }) {
+function TypeItem({ type, isOpen }: { type: SidebarItemType; isOpen: boolean }) {
   const Icon = ICON_MAP[type.icon];
-  const count = ITEM_TYPE_COUNTS[type.id] ?? 0;
 
   return (
     <Link
-      href={`/items/${type.slug}`}
+      href={`/items/${type.name}`}
       className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
     >
       {Icon && <Icon size={16} style={{ color: type.color }} className="shrink-0" />}
@@ -86,16 +111,21 @@ function TypeItem({ type, isOpen }: { type: ItemType; isOpen: boolean }) {
           isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
         }`}
       >
-        {type.name}
+        {displayName(type.name)}
       </span>
       {isOpen && (
-        <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{type.count}</span>
       )}
     </Link>
   );
 }
 
-function SidebarContent({ isOpen }: { isOpen: boolean }) {
+function SidebarContent({
+  isOpen,
+  itemTypes,
+  favoriteCollections,
+  recentCollections,
+}: { isOpen: boolean } & SidebarProps) {
   const { toggle } = useSidebar();
   const [collectionsOpen, setCollectionsOpen] = useState(true);
   useEffect(() => {
@@ -126,7 +156,7 @@ function SidebarContent({ isOpen }: { isOpen: boolean }) {
 
       {/* Types */}
       <nav className="px-2 py-3 space-y-0.5">
-        {ITEM_TYPES.map((type) => (
+        {sortedItemTypes(itemTypes).map((type) => (
           <TypeItem key={type.id} type={type} isOpen={isOpen} />
         ))}
       </nav>
@@ -143,9 +173,9 @@ function SidebarContent({ isOpen }: { isOpen: boolean }) {
               <ChevronDown size={12} />
             </CollapsibleTrigger>
             <CollapsibleContent>
-              {FAVORITE_COLLECTIONS.length > 0 && (
+              {favoriteCollections.length > 0 && (
                 <div className="mt-1 space-y-0.5">
-                  {FAVORITE_COLLECTIONS.map((col) => (
+                  {favoriteCollections.map((col) => (
                     <Link
                       key={col.id}
                       href={`/collections/${col.id}`}
@@ -157,22 +187,35 @@ function SidebarContent({ isOpen }: { isOpen: boolean }) {
                   ))}
                 </div>
               )}
-              {RECENT_COLLECTIONS.length > 0 && (
+              {recentCollections.length > 0 && (
                 <div className="mt-2">
                   <p className="px-2 py-1 text-xs text-muted-foreground">Recent</p>
                   <div className="space-y-0.5">
-                    {RECENT_COLLECTIONS.map((col) => (
+                    {recentCollections.map((col) => (
                       <Link
                         key={col.id}
                         href={`/collections/${col.id}`}
                         className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors truncate"
                       >
+                        {col.dominantColor && (
+                          <span
+                            className="shrink-0 w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: col.dominantColor }}
+                          />
+                        )}
                         <span className="truncate">{col.name}</span>
                       </Link>
                     ))}
                   </div>
                 </div>
               )}
+              {/* View all collections */}
+              <Link
+                href="/collections"
+                className="block px-2 py-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View all collections
+              </Link>
             </CollapsibleContent>
           </Collapsible>
         </div>
@@ -210,7 +253,11 @@ function SidebarContent({ isOpen }: { isOpen: boolean }) {
 
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
-export default function Sidebar() {
+export default function Sidebar({
+  itemTypes,
+  favoriteCollections,
+  recentCollections,
+}: SidebarProps) {
   const { isOpen, isMobileOpen, closeMobile } = useSidebar();
 
   return (
@@ -220,13 +267,23 @@ export default function Sidebar() {
           isOpen ? "w-64" : "w-16"
         }`}
       >
-        <SidebarContent isOpen={isOpen} />
+        <SidebarContent
+          isOpen={isOpen}
+          itemTypes={itemTypes}
+          favoriteCollections={favoriteCollections}
+          recentCollections={recentCollections}
+        />
       </aside>
 
       <Sheet open={isMobileOpen} onOpenChange={(open) => !open && closeMobile()}>
         <SheetContent side="left" className="w-64 p-0 bg-sidebar">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <SidebarContent isOpen={true} />
+          <SidebarContent
+            isOpen={true}
+            itemTypes={itemTypes}
+            favoriteCollections={favoriteCollections}
+            recentCollections={recentCollections}
+          />
         </SheetContent>
       </Sheet>
     </>

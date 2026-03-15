@@ -95,3 +95,67 @@ export async function getCollectionStats(userId: string) {
 
   return { totalCollections, favoriteCollections };
 }
+
+// ─── Sidebar Queries ────────────────────────────────────────────────────────
+
+export interface SidebarCollection {
+  id: string;
+  name: string;
+  isFavorite: boolean;
+  dominantColor: string | null;
+}
+
+export async function getSidebarCollections(
+  userId: string
+): Promise<{ favorites: SidebarCollection[]; recents: SidebarCollection[] }> {
+  const collections = await prisma.collection.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      isFavorite: true,
+      items: {
+        include: {
+          item: {
+            select: {
+              itemType: { select: { color: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  function getDominantColor(
+    items: { item: { itemType: { color: string } } }[]
+  ): string | null {
+    if (items.length === 0) return null;
+    const counts = new Map<string, number>();
+    for (const ic of items) {
+      const color = ic.item.itemType.color;
+      counts.set(color, (counts.get(color) ?? 0) + 1);
+    }
+    let maxColor: string | null = null;
+    let maxCount = 0;
+    for (const [color, count] of counts) {
+      if (count > maxCount) {
+        maxCount = count;
+        maxColor = color;
+      }
+    }
+    return maxColor;
+  }
+
+  const mapped = collections.map((col) => ({
+    id: col.id,
+    name: col.name,
+    isFavorite: col.isFavorite,
+    dominantColor: getDominantColor(col.items),
+  }));
+
+  return {
+    favorites: mapped.filter((c) => c.isFavorite),
+    recents: mapped.filter((c) => !c.isFavorite).slice(0, 5),
+  };
+}
