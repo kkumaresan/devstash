@@ -2,25 +2,15 @@
 
 <!-- Feature Name -->
 
-Dashboard Items: Replace Mock Data with Real DB Data
-
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Not Started
 
 ## Goals
 
 <!-- Goals & requirements -->
-
-- Replace dummy item data in the dashboard main area (right side) with actual data from the Neon database using Prisma
-- Create `src/lib/db/items.ts` with data fetching functions
-- Fetch items directly in server components
-- Item card icon/border derived from the item type
-- Display item type tags and all existing UI elements
-- Update collection stats display
-- If there are no pinned items, hide the pinned section entirely
 
 ## Notes
 
@@ -37,3 +27,4 @@ In Progress
 - Database setup: Prisma 7 + Neon PostgreSQL, full schema, initial migration, seed data, db test script
 - Seed data: demo user, 7 system item types, 5 collections (React Patterns, AI Workflows, DevOps, Terminal Commands, Design Resources)
 - Dashboard collections: replace mock data with real DB data, derive card border color from dominant item type, show type icons per card
+- Dashboard items: replace mock item data with real DB queries, split page components into individual files
