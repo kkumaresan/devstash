@@ -1,0 +1,199 @@
+// Prisma 7 — uses "prisma-client" provider (not "prisma-client-js")
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── User (extends Auth.js v5) ─────────────────────────
+
+model User {
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String?   @unique
+  emailVerified        DateTime?
+  image                String?
+  hashedPassword       String?
+
+  // Pro / Stripe
+  isPro                Boolean   @default(false)
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+
+  // Relations
+  accounts             Account[]
+  sessions             Session[]
+  items                Item[]
+  itemTypes            ItemType[]
+  collections          Collection[]
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+// ─── Auth.js v5 adapter models ──────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Item Types ─────────────────────────────────────────
+
+model ItemType {
+  id       String  @id @default(cuid())
+  name     String
+  icon     String
+  color    String
+  isSystem Boolean @default(false)
+
+  // null for system types, set for user-created custom types
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items    Item[]
+
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+// ─── Items ──────────────────────────────────────────────
+
+enum ContentType {
+  text
+  url
+  file
+}
+
+model Item {
+  id          String      @id @default(cuid())
+  title       String
+  contentType ContentType
+
+  // Text content (snippets, prompts, notes, commands)
+  content     String?     @db.Text
+
+  // File content (file, image types)
+  fileUrl     String?
+  fileName    String?
+  fileSize    Int?
+
+  // URL content (link type)
+  url         String?
+
+  description String?     @db.Text
+  language    String?
+
+  isFavorite  Boolean     @default(false)
+  isPinned    Boolean     @default(false)
+
+  // Relations
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  itemTypeId  String
+  itemType    ItemType    @relation(fields: [itemTypeId], references: [id])
+
+  collections ItemCollection[]
+  tags        ItemTag[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([itemTypeId])
+  @@index([isFavorite])
+  @@index([isPinned])
+  @@index([createdAt])
+}
+
+// ─── Collections ────────────────────────────────────────
+
+model Collection {
+  id            String  @id @default(cuid())
+  name          String
+  description   String? @db.Text
+
+  isFavorite    Boolean @default(false)
+
+  defaultTypeId String?
+
+  // Relations
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items         ItemCollection[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isFavorite])
+}
+
+// ─── Join Tables ─────────────────────────────────────────
+
+model ItemCollection {
+  itemId       String
+  collectionId String
+  addedAt      DateTime @default(now())
+
+  item         Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, collectionId])
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  items ItemTag[]
+}
+
+model ItemTag {
+  itemId String
+  tagId  String
+
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+}
