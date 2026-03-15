@@ -18,13 +18,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ITEMS,
-  COLLECTIONS,
   ITEM_TYPES,
   ITEM_TYPE_COUNTS,
   PINNED_ITEMS,
-  FAVORITE_COLLECTIONS,
 } from "@/lib/mock-data";
-import type { Item, Collection } from "@/lib/mock-data";
+import type { Item } from "@/lib/mock-data";
+import {
+  getRecentCollections,
+  getCollectionStats,
+  type DashboardCollection,
+} from "@/lib/db/collections";
 
 // ─── Icon Map ────────────────────────────────────────────────────────────────
 
@@ -44,28 +47,32 @@ const ICON_MAP: Record<string, IconComponent> = {
   Image,
 };
 
-// ─── Derived Data ─────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const DEMO_USER_ID = "user_demo";
+
+// ─── Derived Data (mock — items only) ────────────────────────────────────────
 
 const totalItems = Object.values(ITEM_TYPE_COUNTS).reduce((a, b) => a + b, 0);
-const totalCollections = COLLECTIONS.length;
 const favoriteItems = ITEMS.filter((i) => i.isFavorite).length;
-const favoriteCollections = FAVORITE_COLLECTIONS.length;
-
-const recentCollections = [...COLLECTIONS]
-  .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-  .slice(0, 6);
 
 const recentItems = [...ITEMS]
   .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   .slice(0, 10);
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatDate(date: string | Date) {
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // ─── Stats Cards ──────────────────────────────────────────────────────────────
 
-function StatsCards() {
+function StatsCards({
+  totalCollections,
+  favoriteCollections,
+}: {
+  totalCollections: number;
+  favoriteCollections: number;
+}) {
   const stats = [
     { label: "Total Items", value: totalItems, icon: Layers, color: "text-blue-500" },
     { label: "Collections", value: totalCollections, icon: BookMarked, color: "text-purple-500" },
@@ -95,12 +102,15 @@ function StatsCards() {
 
 // ─── Collection Card ──────────────────────────────────────────────────────────
 
-function CollectionCard({ collection }: { collection: Collection }) {
-  const dominantType = ITEM_TYPES.find((t) => t.id === collection.dominantTypeId);
-
+function CollectionCard({ collection }: { collection: DashboardCollection }) {
   return (
     <Link href={`/collections/${collection.id}`}>
-      <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
+      <Card
+        className="h-full hover:bg-accent/50 transition-colors cursor-pointer border-t-2"
+        style={{
+          borderTopColor: collection.dominantType?.color ?? "transparent",
+        }}
+      >
         <CardContent className="p-4 flex flex-col gap-2 h-full">
           <div className="flex items-start justify-between gap-2">
             <p className="font-medium text-sm leading-tight">{collection.name}</p>
@@ -116,15 +126,14 @@ function CollectionCard({ collection }: { collection: Collection }) {
               {collection.description}
             </p>
           )}
-          {dominantType && (
+          {collection.types.length > 0 && (
             <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-border">
-              {(() => {
-                const Icon = ICON_MAP[dominantType.icon];
+              {collection.types.map((type) => {
+                const Icon = ICON_MAP[type.icon];
                 return Icon ? (
-                  <Icon size={12} style={{ color: dominantType.color }} />
+                  <Icon key={type.id} size={14} style={{ color: type.color }} />
                 ) : null;
-              })()}
-              <span className="text-xs text-muted-foreground">{dominantType.name}</span>
+              })}
             </div>
           )}
         </CardContent>
@@ -172,7 +181,12 @@ function ItemRow({ item }: { item: Item }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const [recentCollections, collectionStats] = await Promise.all([
+    getRecentCollections(DEMO_USER_ID),
+    getCollectionStats(DEMO_USER_ID),
+  ]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 py-2">
       {/* Header */}
@@ -182,7 +196,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <StatsCards />
+      <StatsCards
+        totalCollections={collectionStats.totalCollections}
+        favoriteCollections={collectionStats.favoriteCollections}
+      />
 
       {/* Recent Collections */}
       <section>
