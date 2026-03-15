@@ -17,17 +17,16 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  ITEMS,
-  ITEM_TYPES,
-  ITEM_TYPE_COUNTS,
-  PINNED_ITEMS,
-} from "@/lib/mock-data";
-import type { Item } from "@/lib/mock-data";
-import {
   getRecentCollections,
   getCollectionStats,
   type DashboardCollection,
 } from "@/lib/db/collections";
+import {
+  getRecentItems,
+  getPinnedItems,
+  getItemStats,
+  type DashboardItem,
+} from "@/lib/db/items";
 
 // ─── Icon Map ────────────────────────────────────────────────────────────────
 
@@ -51,15 +50,6 @@ const ICON_MAP: Record<string, IconComponent> = {
 
 const DEMO_USER_ID = "user_demo";
 
-// ─── Derived Data (mock — items only) ────────────────────────────────────────
-
-const totalItems = Object.values(ITEM_TYPE_COUNTS).reduce((a, b) => a + b, 0);
-const favoriteItems = ITEMS.filter((i) => i.isFavorite).length;
-
-const recentItems = [...ITEMS]
-  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  .slice(0, 10);
-
 function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
@@ -67,10 +57,14 @@ function formatDate(date: string | Date) {
 // ─── Stats Cards ──────────────────────────────────────────────────────────────
 
 function StatsCards({
+  totalItems,
   totalCollections,
+  favoriteItems,
   favoriteCollections,
 }: {
+  totalItems: number;
   totalCollections: number;
+  favoriteItems: number;
   favoriteCollections: number;
 }) {
   const stats = [
@@ -144,15 +138,14 @@ function CollectionCard({ collection }: { collection: DashboardCollection }) {
 
 // ─── Item Row ─────────────────────────────────────────────────────────────────
 
-function ItemRow({ item }: { item: Item }) {
-  const itemType = ITEM_TYPES.find((t) => t.id === item.itemTypeId);
-  const Icon = itemType ? ICON_MAP[itemType.icon] : null;
+function ItemRow({ item }: { item: DashboardItem }) {
+  const Icon = ICON_MAP[item.itemType.icon];
 
   return (
     <div className="flex items-start gap-3 py-3 border-b border-border last:border-0">
       <div className="shrink-0 mt-0.5">
-        {Icon && itemType && (
-          <Icon size={16} style={{ color: itemType.color }} />
+        {Icon && (
+          <Icon size={16} style={{ color: item.itemType.color }} />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -182,10 +175,14 @@ function ItemRow({ item }: { item: Item }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  const [recentCollections, collectionStats] = await Promise.all([
-    getRecentCollections(DEMO_USER_ID),
-    getCollectionStats(DEMO_USER_ID),
-  ]);
+  const [recentCollections, collectionStats, recentItems, pinnedItems, itemStats] =
+    await Promise.all([
+      getRecentCollections(DEMO_USER_ID),
+      getCollectionStats(DEMO_USER_ID),
+      getRecentItems(DEMO_USER_ID),
+      getPinnedItems(DEMO_USER_ID),
+      getItemStats(DEMO_USER_ID),
+    ]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 py-2">
@@ -197,7 +194,9 @@ export default async function DashboardPage() {
 
       {/* Stats */}
       <StatsCards
+        totalItems={itemStats.totalItems}
         totalCollections={collectionStats.totalCollections}
+        favoriteItems={itemStats.favoriteItems}
         favoriteCollections={collectionStats.favoriteCollections}
       />
 
@@ -217,7 +216,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Pinned Items */}
-      {PINNED_ITEMS.length > 0 && (
+      {pinnedItems.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
             <Pin size={14} className="text-muted-foreground" />
@@ -225,7 +224,7 @@ export default async function DashboardPage() {
           </div>
           <Card>
             <CardContent className="p-4">
-              {PINNED_ITEMS.map((item) => (
+              {pinnedItems.map((item) => (
                 <ItemRow key={item.id} item={item} />
               ))}
             </CardContent>
