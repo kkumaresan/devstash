@@ -1,22 +1,21 @@
 import "dotenv/config";
+import { hash } from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 // ─── System Item Types ────────────────────────────────────────────────────────
 
 const SYSTEM_TYPES = [
-  { id: "type_snippet", name: "Snippet", icon: "Code",       color: "#3b82f6" },
-  { id: "type_prompt",  name: "Prompt",  icon: "Sparkles",   color: "#8b5cf6" },
-  { id: "type_command", name: "Command", icon: "Terminal",   color: "#f97316" },
-  { id: "type_note",    name: "Note",    icon: "StickyNote", color: "#fde047" },
-  { id: "type_link",    name: "Link",    icon: "Link",       color: "#10b981" },
-  { id: "type_file",    name: "File",    icon: "File",       color: "#6b7280" },
-  { id: "type_image",   name: "Image",   icon: "Image",      color: "#ec4899" },
+  { id: "type_snippet", name: "snippet", icon: "Code",       color: "#3b82f6" },
+  { id: "type_prompt",  name: "prompt",  icon: "Sparkles",   color: "#8b5cf6" },
+  { id: "type_command", name: "command", icon: "Terminal",   color: "#f97316" },
+  { id: "type_note",    name: "note",    icon: "StickyNote", color: "#fde047" },
+  { id: "type_file",    name: "file",    icon: "File",       color: "#6b7280" },
+  { id: "type_image",   name: "image",   icon: "Image",      color: "#ec4899" },
+  { id: "type_link",    name: "link",    icon: "Link",       color: "#10b981" },
 ];
 
 // ─── Seed ─────────────────────────────────────────────────────────────────────
@@ -24,316 +23,395 @@ const SYSTEM_TYPES = [
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // 1. System item types (global, no userId)
+  // 1. System item types
   console.log("  → Upserting system item types...");
   for (const type of SYSTEM_TYPES) {
     await prisma.itemType.upsert({
       where: { id: type.id },
       update: { name: type.name, icon: type.icon, color: type.color },
-      create: { id: type.id, name: type.name, icon: type.icon, color: type.color, isSystem: true, userId: null },
+      create: { ...type, isSystem: true, userId: null },
     });
   }
 
-  // 2. Test user
-  console.log("  → Upserting test user...");
+  // 2. Demo user
+  console.log("  → Upserting demo user...");
+  const hashedPassword = await hash("12345678", 12);
   const user = await prisma.user.upsert({
-    where: { email: "john@example.com" },
+    where: { email: "demo@devstash.io" },
     update: {},
     create: {
-      id: "user_seed_1",
-      name: "John Doe",
-      email: "john@example.com",
-      hashedPassword: null,
+      id: "user_demo",
+      name: "Demo User",
+      email: "demo@devstash.io",
+      hashedPassword,
+      emailVerified: new Date(),
       isPro: false,
     },
   });
 
-  // 3. Tags
-  console.log("  → Upserting tags...");
-  const tagNames = ["react", "auth", "hooks", "python", "git", "typescript", "ai", "api", "patterns", "interview"];
-  const tagIds: Record<string, string> = {};
+  // 3. Clear existing demo items/collections so re-runs stay clean
+  await prisma.collection.deleteMany({ where: { userId: user.id } });
+  await prisma.item.deleteMany({ where: { userId: user.id } });
 
-  for (const name of tagNames) {
-    const tag = await prisma.tag.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    });
-    tagIds[name] = tag.id;
-  }
+  // ─── Helper ───────────────────────────────────────────────────────────────
 
-  // 4. Items
-  console.log("  → Upserting items...");
-
-  const items = [
-    {
-      id: "item_seed_1",
-      title: "useAuth Hook",
-      contentType: "text" as const,
-      content: `import { useSession } from "next-auth/react";
-
-export function useAuth() {
-  const { data: session, status } = useSession();
-  return {
-    user: session?.user,
-    isAuthenticated: status === "authenticated",
-    isLoading: status === "loading",
-  };
-}`,
-      description: "Custom authentication hook for React applications",
-      language: "typescript",
-      isFavorite: false,
-      isPinned: true,
-      itemTypeId: "type_snippet",
-      tags: ["react", "auth", "hooks"],
-    },
-    {
-      id: "item_seed_2",
-      title: "API Error Handling Pattern",
-      contentType: "text" as const,
-      content: `async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
-      return res;
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, 2 ** i * 1000));
+  const createItem = (
+    id: string,
+    title: string,
+    typeId: string,
+    contentType: "text" | "url" | "file",
+    extra: {
+      content?: string;
+      url?: string;
+      description?: string;
+      language?: string;
+      isFavorite?: boolean;
+      isPinned?: boolean;
     }
-  }
-  throw new Error("Max retries exceeded");
-}`,
-      description: "Fetch wrapper with exponential backoff retry logic",
+  ) =>
+    prisma.item.create({
+      data: {
+        id,
+        title,
+        contentType,
+        userId: user.id,
+        itemTypeId: typeId,
+        isFavorite: extra.isFavorite ?? false,
+        isPinned: extra.isPinned ?? false,
+        ...extra,
+      },
+    });
+
+  // ─── React Patterns ───────────────────────────────────────────────────────
+
+  console.log("  → Seeding React Patterns...");
+
+  const [useDebounce, useLocalStorage, contextProvider] = await Promise.all([
+    createItem("item_rp_1", "useDebounce", "type_snippet", "text", {
       language: "typescript",
-      isFavorite: false,
-      isPinned: true,
-      itemTypeId: "type_snippet",
-      tags: ["api", "patterns"],
-    },
-    {
-      id: "item_seed_3",
-      title: "useDebouncedValue",
-      contentType: "text" as const,
+      description: "Delays updating a value until after a specified wait time",
+      isFavorite: true,
       content: `import { useState, useEffect } from "react";
 
-export function useDebouncedValue<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
   useEffect(() => {
-    const handler = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(handler);
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
   }, [value, delay]);
-  return debounced;
+
+  return debouncedValue;
 }`,
-      description: "Debounce any rapidly changing value",
+    }),
+    createItem("item_rp_2", "useLocalStorage", "type_snippet", "text", {
       language: "typescript",
-      isFavorite: true,
-      isPinned: false,
-      itemTypeId: "type_snippet",
-      tags: ["react", "hooks"],
-    },
-    {
-      id: "item_seed_4",
-      title: "Python List Comprehension Patterns",
-      contentType: "text" as const,
-      content: `# Filter and transform
-evens_squared = [x**2 for x in range(20) if x % 2 == 0]
+      description: "Persist state to localStorage with automatic JSON serialization",
+      content: `import { useState, useEffect } from "react";
 
-# Flatten nested list
-flat = [item for sublist in nested for item in sublist]
+export function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === "undefined") return initialValue;
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? (JSON.parse(item) as T) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
 
-# Dict comprehension
-word_lengths = {word: len(word) for word in words}`,
-      description: "Common Python list and dict comprehension patterns",
-      language: "python",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_snippet",
-      tags: ["python"],
-    },
-    {
-      id: "item_seed_5",
-      title: "Code Review Prompt",
-      contentType: "text" as const,
-      content: `Review the following code for:
-1. Bugs and logical errors
-2. Security vulnerabilities
-3. Performance issues
-4. Readability and maintainability
+  const setValue = (value: T | ((val: T) => T)) => {
+    const valueToStore = value instanceof Function ? value(storedValue) : value;
+    setStoredValue(valueToStore);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    }
+  };
 
-Provide specific suggestions with examples where relevant.
+  return [storedValue, setValue] as const;
+}`,
+    }),
+    createItem("item_rp_3", "Compound Component Pattern", "type_snippet", "text", {
+      language: "typescript",
+      description: "Flexible component composition using React context",
+      isPinned: true,
+      content: `import { createContext, useContext, useState } from "react";
 
-\`\`\`
-{{code}}
-\`\`\``,
-      description: "General-purpose code review prompt",
-      isFavorite: true,
-      isPinned: false,
-      itemTypeId: "type_prompt",
-      tags: ["ai"],
-    },
-    {
-      id: "item_seed_6",
-      title: "Explain Code to Junior Dev",
-      contentType: "text" as const,
-      content: `Explain the following code to a junior developer. Use simple language, avoid jargon, and include an analogy where helpful.
+type AccordionContextType = { openId: string | null; toggle: (id: string) => void };
+const AccordionContext = createContext<AccordionContextType | null>(null);
 
-Code:
-\`\`\`
-{{code}}
-\`\`\``,
-      description: "Prompt to get beginner-friendly code explanations",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_prompt",
-      tags: ["ai"],
-    },
-    {
-      id: "item_seed_7",
-      title: "Git Undo Last Commit",
-      contentType: "text" as const,
-      content: "git reset --soft HEAD~1",
-      description: "Undo the last commit but keep changes staged",
-      language: "bash",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_command",
-      tags: ["git"],
-    },
-    {
-      id: "item_seed_8",
-      title: "Git Interactive Rebase Last 5",
-      contentType: "text" as const,
-      content: "git rebase -i HEAD~5",
-      description: "Interactively rebase the last 5 commits",
-      language: "bash",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_command",
-      tags: ["git"],
-    },
-    {
-      id: "item_seed_9",
-      title: "React 19 Key Changes",
-      contentType: "text" as const,
-      content: `## React 19 Key Changes
+function Accordion({ children }: { children: React.ReactNode }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggle = (id: string) => setOpenId((prev) => (prev === id ? null : id));
+  return <AccordionContext.Provider value={{ openId, toggle }}>{children}</AccordionContext.Provider>;
+}
 
-- **Actions**: async functions in transitions, replacing manual \`isPending\` state
-- **useOptimistic**: built-in optimistic UI updates
-- **use()**: read promises and context in render
-- **Server Components**: stable in Next.js App Router
-- **ref as prop**: no more \`forwardRef\` wrapper needed`,
-      description: "Quick reference for React 19 new features",
-      isFavorite: true,
-      isPinned: false,
-      itemTypeId: "type_note",
-      tags: ["react"],
-    },
-    {
-      id: "item_seed_10",
-      title: "Tailwind CSS v4 Docs",
-      contentType: "url" as const,
-      url: "https://tailwindcss.com/docs",
-      description: "Official Tailwind CSS v4 documentation",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_link",
-      tags: [],
-    },
-    {
-      id: "item_seed_11",
-      title: "shadcn/ui Components",
-      contentType: "url" as const,
-      url: "https://ui.shadcn.com",
-      description: "Accessible component library built on Radix UI",
-      isFavorite: false,
-      isPinned: false,
-      itemTypeId: "type_link",
-      tags: ["react"],
-    },
-  ];
+function AccordionItem({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  const ctx = useContext(AccordionContext)!;
+  const isOpen = ctx.openId === id;
+  return (
+    <div>
+      <button onClick={() => ctx.toggle(id)}>{title}</button>
+      {isOpen && <div>{children}</div>}
+    </div>
+  );
+}
 
-  for (const { tags, ...itemData } of items) {
-    await prisma.item.upsert({
-      where: { id: itemData.id },
-      update: {},
-      create: {
-        ...itemData,
-        userId: user.id,
-        tags: {
-          create: tags.map((name) => ({
-            tag: {
-              connect: { id: tagIds[name] },
-            },
-          })),
-        },
-      },
-    });
-  }
+Accordion.Item = AccordionItem;
+export { Accordion };`,
+    }),
+  ]);
 
-  // 5. Collections
-  console.log("  → Upserting collections...");
-
-  const collections = [
-    {
-      id: "col_seed_1",
+  await prisma.collection.create({
+    data: {
+      id: "col_react_patterns",
       name: "React Patterns",
-      description: "Common React patterns and hooks",
+      description: "Reusable React patterns and hooks",
+      userId: user.id,
       isFavorite: true,
-      items: ["item_seed_1", "item_seed_2", "item_seed_3"],
-    },
-    {
-      id: "col_seed_2",
-      name: "Python Snippets",
-      description: "Useful Python code snippets",
-      isFavorite: false,
-      items: ["item_seed_4"],
-    },
-    {
-      id: "col_seed_3",
-      name: "Context Files",
-      description: "AI context files for projects",
-      isFavorite: true,
-      items: [],
-    },
-    {
-      id: "col_seed_4",
-      name: "Interview Prep",
-      description: "Technical interview preparation",
-      isFavorite: false,
-      items: ["item_seed_9"],
-    },
-    {
-      id: "col_seed_5",
-      name: "Git Commands",
-      description: "Frequently used git commands",
-      isFavorite: true,
-      items: ["item_seed_7", "item_seed_8"],
-    },
-    {
-      id: "col_seed_6",
-      name: "AI Prompts",
-      description: "Curated AI prompts for coding",
-      isFavorite: false,
-      items: ["item_seed_5", "item_seed_6"],
-    },
-  ];
-
-  for (const { items: itemIds, ...colData } of collections) {
-    await prisma.collection.upsert({
-      where: { id: colData.id },
-      update: {},
-      create: {
-        ...colData,
-        userId: user.id,
-        items: {
-          create: itemIds.map((itemId) => ({ itemId })),
-        },
+      items: {
+        create: [
+          { itemId: useDebounce.id },
+          { itemId: useLocalStorage.id },
+          { itemId: contextProvider.id },
+        ],
       },
-    });
-  }
+    },
+  });
+
+  // ─── AI Workflows ─────────────────────────────────────────────────────────
+
+  console.log("  → Seeding AI Workflows...");
+
+  const [codeReview, docGen, refactoring] = await Promise.all([
+    createItem("item_ai_1", "Code Review Prompt", "type_prompt", "text", {
+      description: "Thorough code review covering bugs, security, and performance",
+      isFavorite: true,
+      content: `You are a senior software engineer. Review the following code and provide feedback on:
+
+1. **Bugs & Logic Errors** — identify any incorrect behavior or edge cases
+2. **Security** — flag vulnerabilities (injections, auth issues, data exposure)
+3. **Performance** — highlight unnecessary re-renders, N+1 queries, or expensive ops
+4. **Readability** — suggest naming improvements and structural clarity
+5. **Best Practices** — note deviations from idiomatic patterns for the language/framework
+
+For each issue, provide: severity (critical/major/minor), a clear explanation, and a corrected code snippet.
+
+\`\`\`
+{{code}}
+\`\`\``,
+    }),
+    createItem("item_ai_2", "Documentation Generator", "type_prompt", "text", {
+      description: "Generate JSDoc/TSDoc comments for functions and classes",
+      content: `Generate comprehensive JSDoc/TSDoc documentation for the following code.
+
+Requirements:
+- Add @param, @returns, @throws, and @example tags where applicable
+- Keep descriptions concise but informative
+- Include type information even if TypeScript types are present
+- Add a practical usage example in @example
+
+Code to document:
+\`\`\`
+{{code}}
+\`\`\``,
+    }),
+    createItem("item_ai_3", "Refactoring Assistant", "type_prompt", "text", {
+      description: "Identify and apply refactoring opportunities to improve code quality",
+      content: `Analyze the following code and suggest refactoring improvements.
+
+Focus on:
+- Extracting reusable functions or components
+- Reducing duplication (DRY principle)
+- Simplifying complex conditionals
+- Improving variable and function naming
+- Applying relevant design patterns
+
+For each suggestion:
+1. Explain the problem with the current code
+2. Describe the refactoring approach
+3. Show the refactored version
+
+\`\`\`
+{{code}}
+\`\`\``,
+    }),
+  ]);
+
+  await prisma.collection.create({
+    data: {
+      id: "col_ai_workflows",
+      name: "AI Workflows",
+      description: "AI prompts and workflow automations",
+      userId: user.id,
+      items: {
+        create: [
+          { itemId: codeReview.id },
+          { itemId: docGen.id },
+          { itemId: refactoring.id },
+        ],
+      },
+    },
+  });
+
+  // ─── DevOps ───────────────────────────────────────────────────────────────
+
+  console.log("  → Seeding DevOps...");
+
+  const [dockerfile, deployCmd, dockerHubLink, ghActionsLink] = await Promise.all([
+    createItem("item_do_1", "Dockerfile Multi-Stage Build", "type_snippet", "text", {
+      language: "dockerfile",
+      description: "Production-ready multi-stage Dockerfile for a Node.js app",
+      content: `# Stage 1: Install dependencies
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Stage 2: Build
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 3: Production image
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY package*.json ./
+EXPOSE 3000
+CMD ["npm", "start"]`,
+    }),
+    createItem("item_do_2", "Deploy to Production", "type_command", "text", {
+      language: "bash",
+      description: "Build, tag, push Docker image and trigger rolling deployment",
+      content: `docker build -t myapp:$(git rev-parse --short HEAD) . \\
+  && docker tag myapp:$(git rev-parse --short HEAD) registry/myapp:latest \\
+  && docker push registry/myapp:latest \\
+  && kubectl rollout restart deployment/myapp`,
+    }),
+    createItem("item_do_3", "Docker Hub", "type_link", "url", {
+      url: "https://hub.docker.com",
+      description: "Official Docker image registry",
+    }),
+    createItem("item_do_4", "GitHub Actions Docs", "type_link", "url", {
+      url: "https://docs.github.com/en/actions",
+      description: "GitHub Actions CI/CD documentation",
+    }),
+  ]);
+
+  await prisma.collection.create({
+    data: {
+      id: "col_devops",
+      name: "DevOps",
+      description: "Infrastructure and deployment resources",
+      userId: user.id,
+      items: {
+        create: [
+          { itemId: dockerfile.id },
+          { itemId: deployCmd.id },
+          { itemId: dockerHubLink.id },
+          { itemId: ghActionsLink.id },
+        ],
+      },
+    },
+  });
+
+  // ─── Terminal Commands ────────────────────────────────────────────────────
+
+  console.log("  → Seeding Terminal Commands...");
+
+  const [gitStash, dockerCleanup, killPort, npmCache] = await Promise.all([
+    createItem("item_tc_1", "Git Stash with Message", "type_command", "text", {
+      language: "bash",
+      description: "Save current changes to stash with a descriptive name",
+      isFavorite: true,
+      content: `git stash push -m "wip: {{description}}"`,
+    }),
+    createItem("item_tc_2", "Docker Cleanup", "type_command", "text", {
+      language: "bash",
+      description: "Remove all stopped containers, unused images, and dangling volumes",
+      content: `docker system prune -af --volumes`,
+    }),
+    createItem("item_tc_3", "Kill Process on Port", "type_command", "text", {
+      language: "bash",
+      description: "Find and kill whatever process is listening on a given port",
+      isPinned: true,
+      content: `lsof -ti :{{port}} | xargs kill -9`,
+    }),
+    createItem("item_tc_4", "Clear npm Cache", "type_command", "text", {
+      language: "bash",
+      description: "Verify and clean the npm cache to fix install issues",
+      content: `npm cache verify && npm cache clean --force`,
+    }),
+  ]);
+
+  await prisma.collection.create({
+    data: {
+      id: "col_terminal",
+      name: "Terminal Commands",
+      description: "Useful shell commands for everyday development",
+      userId: user.id,
+      isFavorite: true,
+      items: {
+        create: [
+          { itemId: gitStash.id },
+          { itemId: dockerCleanup.id },
+          { itemId: killPort.id },
+          { itemId: npmCache.id },
+        ],
+      },
+    },
+  });
+
+  // ─── Design Resources ─────────────────────────────────────────────────────
+
+  console.log("  → Seeding Design Resources...");
+
+  const [tailwindLink, shadcnLink, radixLink, lucideLink] = await Promise.all([
+    createItem("item_dr_1", "Tailwind CSS Docs", "type_link", "url", {
+      url: "https://tailwindcss.com/docs",
+      description: "Official Tailwind CSS v4 utility-first CSS framework documentation",
+      isFavorite: true,
+    }),
+    createItem("item_dr_2", "shadcn/ui", "type_link", "url", {
+      url: "https://ui.shadcn.com",
+      description: "Beautifully designed accessible components built on Radix UI",
+    }),
+    createItem("item_dr_3", "Radix UI Primitives", "type_link", "url", {
+      url: "https://www.radix-ui.com/primitives",
+      description: "Unstyled, accessible component primitives for building design systems",
+    }),
+    createItem("item_dr_4", "Lucide Icons", "type_link", "url", {
+      url: "https://lucide.dev/icons",
+      description: "Beautiful and consistent open-source icon library",
+    }),
+  ]);
+
+  await prisma.collection.create({
+    data: {
+      id: "col_design",
+      name: "Design Resources",
+      description: "UI/UX resources and references",
+      userId: user.id,
+      items: {
+        create: [
+          { itemId: tailwindLink.id },
+          { itemId: shadcnLink.id },
+          { itemId: radixLink.id },
+          { itemId: lucideLink.id },
+        ],
+      },
+    },
+  });
 
   console.log("✅ Seed complete.");
+  console.log(`   Demo user: demo@devstash.io / 12345678`);
 }
 
 main()
