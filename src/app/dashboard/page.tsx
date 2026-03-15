@@ -9,6 +9,8 @@ import { getRecentItems, getPinnedItems, getItemStats } from "@/lib/db/items";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+export const dynamic = "force-dynamic";
+
 const DEMO_USER_ID = "user_demo";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

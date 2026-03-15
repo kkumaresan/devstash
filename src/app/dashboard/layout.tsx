@@ -5,6 +5,8 @@ import { SidebarProvider } from "@/components/dashboard/SidebarContext";
 import { getItemTypesWithCounts } from "@/lib/db/items";
 import { getSidebarCollections } from "@/lib/db/collections";
 
+export const dynamic = "force-dynamic";
+
 const DEMO_USER_ID = "user_demo";
 
 export default async function DashboardLayout({
