@@ -1,26 +1,16 @@
-# Current Feature: Auth Credentials - Email/Password Provider
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add Credentials provider for email/password authentication
-- Use bcryptjs for password hashing (already installed)
-- Add password field to User model via migration if not already there
-- Update `auth.config.ts` with Credentials placeholder (`authorize: () => null`)
-- Update `auth.ts` to override Credentials with actual bcrypt validation
-- Create registration API route at `POST /api/auth/register`
-- Registration: validate passwords match, check existing user, hash password, create user
+<!-- Define goals here -->
 
 ## Notes
 
-- Split pattern: `auth.config.ts` gets placeholder Credentials, `auth.ts` overrides with real logic
-- Registration accepts: name, email, password, confirmPassword
-- Return proper success/error JSON responses
-- GitHub OAuth must still work alongside Credentials
-- Test via curl and NextAuth default sign-in page
+<!-- Additional context -->
 
 ## History
 
@@ -38,3 +28,4 @@ In Progress
 - Add Pro Badge: added subtle PRO badge to Files and Images types in sidebar using shadcn Badge component
 - Code Scanner Quick Wins: type safety for queryItems, take limits on collection queries, composite indexes, Tag userId scoping, deduplicated ICON_MAP, DATABASE_URL guard
 - Auth Phase 1: NextAuth v5 with GitHub OAuth, split config for edge compatibility, Prisma adapter with JWT strategy, proxy-based dashboard route protection, session type extensions
+- Auth Phase 2: Credentials provider with email/password registration, bcrypt validation, POST /api/auth/register endpoint
