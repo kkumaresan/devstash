@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { ComponentType, CSSProperties } from "react";
 import Link from "next/link";
 import {
@@ -135,10 +135,8 @@ function SidebarContent({
   recentCollections,
 }: { isOpen: boolean } & SidebarProps) {
   const { toggle } = useSidebar();
-  const [collectionsOpen, setCollectionsOpen] = useState(true);
-  useEffect(() => {
-    if (isOpen) setCollectionsOpen(true);
-  }, [isOpen]);
+  const [collectionsUserChoice, setCollectionsUserChoice] = useState(true);
+  const collectionsOpen = isOpen ? collectionsUserChoice : true;
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -172,7 +170,7 @@ function SidebarContent({
       {/* Collections — only visible when expanded */}
       {isOpen && (
         <div className="px-2 pb-3">
-          <Collapsible open={collectionsOpen} onOpenChange={setCollectionsOpen}>
+          <Collapsible open={collectionsOpen} onOpenChange={setCollectionsUserChoice}>
             <CollapsibleTrigger
               className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
               aria-label="Toggle collections"
