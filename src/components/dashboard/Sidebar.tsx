@@ -2,22 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
   Star,
-  Settings,
+  LogOut,
 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import UserAvatar from "@/components/UserAvatar";
 import { ICON_MAP } from "./icon-map";
 import { useSidebar } from "./SidebarContext";
 import type { SidebarItemType } from "@/lib/db/items";
@@ -50,20 +57,6 @@ function displayName(name: string): string {
   return TYPE_DISPLAY[name]?.label ?? name;
 }
 
-const CURRENT_USER = {
-  name: "Demo User",
-  email: "demo@devstash.io",
-  image: undefined as string | undefined,
-};
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +67,44 @@ interface SidebarProps {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+function UserSection({ isOpen }: { isOpen: boolean }) {
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  return (
+    <div className="border-t border-border px-3 py-3">
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md p-1 hover:bg-accent transition-colors text-left cursor-pointer">
+          <UserAvatar
+            name={user?.name}
+            image={user?.image}
+            className="h-7 w-7 shrink-0"
+          />
+          {isOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" className="w-48">
+          <DropdownMenuItem
+            render={<Link href="/profile" />}
+          >
+            Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+          >
+            <LogOut size={14} />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 function TypeItem({ type, isOpen }: { type: SidebarItemType; isOpen: boolean }) {
   const Icon = ICON_MAP[type.icon];
@@ -114,9 +145,9 @@ function SidebarContent({
   const collectionsOpen = isOpen ? collectionsUserChoice : true;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-border shrink-0">
         <span
           className={`font-semibold text-sm transition-[opacity,width] duration-200 overflow-hidden whitespace-nowrap ${
             isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
@@ -135,99 +166,78 @@ function SidebarContent({
         </Button>
       </div>
 
-      {/* Types */}
-      <nav className="px-2 py-3 space-y-0.5">
-        {sortedItemTypes(itemTypes).map((type) => (
-          <TypeItem key={type.id} type={type} isOpen={isOpen} />
-        ))}
-      </nav>
+      {/* Scrollable middle */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Types */}
+        <nav className="px-2 py-3 space-y-0.5">
+          {sortedItemTypes(itemTypes).map((type) => (
+            <TypeItem key={type.id} type={type} isOpen={isOpen} />
+          ))}
+        </nav>
 
-      {/* Collections — only visible when expanded */}
-      {isOpen && (
-        <div className="px-2 pb-3">
-          <Collapsible open={collectionsOpen} onOpenChange={setCollectionsUserChoice}>
-            <CollapsibleTrigger
-              className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-              aria-label="Toggle collections"
-            >
-              Collections
-              <ChevronDown size={12} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              {favoriteCollections.length > 0 && (
-                <div className="mt-1 space-y-0.5">
-                  {favoriteCollections.map((col) => (
-                    <Link
-                      key={col.id}
-                      href={`/collections/${col.id}`}
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                    >
-                      <Star size={12} className="shrink-0 text-yellow-400 fill-yellow-400" />
-                      <span className="truncate">{col.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {recentCollections.length > 0 && (
-                <div className="mt-2">
-                  <p className="px-2 py-1 text-xs text-muted-foreground">Recent</p>
-                  <div className="space-y-0.5">
-                    {recentCollections.map((col) => (
+        {/* Collections — only visible when expanded */}
+        {isOpen && (
+          <div className="px-2 pb-3">
+            <Collapsible open={collectionsOpen} onOpenChange={setCollectionsUserChoice}>
+              <CollapsibleTrigger
+                className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                aria-label="Toggle collections"
+              >
+                Collections
+                <ChevronDown size={12} />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {favoriteCollections.length > 0 && (
+                  <div className="mt-1 space-y-0.5">
+                    {favoriteCollections.map((col) => (
                       <Link
                         key={col.id}
                         href={`/collections/${col.id}`}
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors truncate"
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
-                        {col.dominantColor && (
-                          <span
-                            className="shrink-0 w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: col.dominantColor }}
-                          />
-                        )}
+                        <Star size={12} className="shrink-0 text-yellow-400 fill-yellow-400" />
                         <span className="truncate">{col.name}</span>
                       </Link>
                     ))}
                   </div>
-                </div>
-              )}
-              {/* View all collections */}
-              <Link
-                href="/collections"
-                className="block px-2 py-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                View all collections
-              </Link>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      )}
-
-      <div className="flex-1" />
-
-      {/* User Avatar */}
-      <div className="border-t border-border px-3 py-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-7 w-7 shrink-0">
-            {CURRENT_USER.image && (
-              <AvatarImage src={CURRENT_USER.image} alt={CURRENT_USER.name} />
-            )}
-            <AvatarFallback className="text-xs">
-              {getInitials(CURRENT_USER.name)}
-            </AvatarFallback>
-          </Avatar>
-          {isOpen && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{CURRENT_USER.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{CURRENT_USER.email}</p>
-              </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Settings">
-                <Settings size={14} />
-              </Button>
-            </>
-          )}
-        </div>
+                )}
+                {recentCollections.length > 0 && (
+                  <div className="mt-2">
+                    <p className="px-2 py-1 text-xs text-muted-foreground">Recent</p>
+                    <div className="space-y-0.5">
+                      {recentCollections.map((col) => (
+                        <Link
+                          key={col.id}
+                          href={`/collections/${col.id}`}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors truncate"
+                        >
+                          {col.dominantColor && (
+                            <span
+                              className="shrink-0 w-2.5 h-2.5 rounded-full"
+                              style={{ backgroundColor: col.dominantColor }}
+                            />
+                          )}
+                          <span className="truncate">{col.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* View all collections */}
+                <Link
+                  href="/collections"
+                  className="block px-2 py-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  View all collections
+                </Link>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
       </div>
+
+      {/* User Avatar — pinned to bottom */}
+      <UserSection isOpen={isOpen} />
     </div>
   );
 }
