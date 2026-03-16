@@ -22,6 +22,14 @@ Read these for full project context:
 - OpenAI gpt-5-nano
 - Stripe (payments)
 
+## Neon Database
+
+**IMPORTANT:** Always use the development branch for all Neon MCP operations by default. NEVER run queries against the main/production branch unless explicitly instructed.
+
+- Project ID: `hidden-meadow-35878134`
+- Development branch ID: `br-square-meadow-a145e7xm`
+- Production branch ID: `br-morning-brook-a1983u50` (DO NOT USE unless explicitly told)
+
 ## Quick Commands
 
 ```bash
