@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { ComponentType, CSSProperties } from "react";
 import Link from "next/link";
 import {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  Link2,
-  File,
-  Image,
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
@@ -26,29 +18,12 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ICON_MAP } from "./icon-map";
 import { useSidebar } from "./SidebarContext";
 import type { SidebarItemType } from "@/lib/db/items";
 import type { SidebarCollection } from "@/lib/db/collections";
 
 const PRO_TYPES = new Set(["file", "image"]);
-
-// ─── Icon Map ────────────────────────────────────────────────────────────────
-
-type IconComponent = ComponentType<{
-  size?: number;
-  className?: string;
-  style?: CSSProperties;
-}>;
-
-const ICON_MAP: Record<string, IconComponent> = {
-  Code,
-  Sparkles,
-  Terminal,
-  StickyNote,
-  Link: Link2,
-  File,
-  Image,
-};
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

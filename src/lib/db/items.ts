@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,11 @@ function mapItem(item: Awaited<ReturnType<typeof queryItems>>[number]): Dashboar
   };
 }
 
-async function queryItems(where: object, limit: number, orderBy: object = { createdAt: "desc" }) {
+async function queryItems(
+  where: Prisma.ItemWhereInput,
+  limit: number,
+  orderBy: Prisma.ItemOrderByWithRelationInput = { createdAt: "desc" },
+) {
   return prisma.item.findMany({
     where,
     orderBy,

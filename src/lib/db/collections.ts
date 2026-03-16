@@ -33,6 +33,7 @@ export async function getRecentCollections(
     take: limit,
     include: {
       items: {
+        take: 50,
         include: {
           item: {
             select: {
@@ -43,6 +44,7 @@ export async function getRecentCollections(
           },
         },
       },
+      _count: { select: { items: true } },
     },
   });
 
@@ -78,7 +80,7 @@ export async function getRecentCollections(
       name: col.name,
       description: col.description,
       isFavorite: col.isFavorite,
-      itemCount: col.items.length,
+      itemCount: col._count.items,
       dominantType,
       types,
       createdAt: col.createdAt,
@@ -116,6 +118,7 @@ export async function getSidebarCollections(
       name: true,
       isFavorite: true,
       items: {
+        take: 50,
         include: {
           item: {
             select: {

@@ -30,6 +30,7 @@ model User {
   items                Item[]
   itemTypes            ItemType[]
   collections          Collection[]
+  tags                 Tag[]
 
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -139,6 +140,7 @@ model Item {
   updatedAt   DateTime    @updatedAt
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([itemTypeId])
   @@index([isFavorite])
   @@index([isPinned])
@@ -166,6 +168,8 @@ model Collection {
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, updatedAt])
+  @@index([userId, isFavorite])
   @@index([isFavorite])
 }
 
@@ -183,9 +187,16 @@ model ItemCollection {
 }
 
 model Tag {
-  id    String    @id @default(cuid())
-  name  String    @unique
-  items ItemTag[]
+  id     String    @id @default(cuid())
+  name   String
+
+  userId String?
+  user   User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items  ItemTag[]
+
+  @@unique([name, userId])
+  @@index([userId])
 }
 
 model ItemTag {

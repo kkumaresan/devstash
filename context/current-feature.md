@@ -1,20 +1,35 @@
 # Current Feature
 
-<!-- Feature Name -->
+Code Scanner Quick Wins
 
 ## Status
 
-<!-- Not Started|In Progress|Completed -->
-
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Goals & requirements -->
+Quick wins from code scan (2026-03-16):
+
+### High
+
+- [x] Use `Prisma.ItemWhereInput` / `Prisma.ItemOrderByWithRelationInput` types in `queryItems` (`src/lib/db/items.ts`) instead of bare `object`
+
+### Medium
+
+- [x] Add `take` limit on items relation in `getRecentCollections` (`src/lib/db/collections.ts`) to prevent unbounded fetches
+- [x] Add `take` limit and move slicing to Prisma query in `getSidebarCollections` (`src/lib/db/collections.ts`)
+- [x] Add composite database indexes: `[userId, createdAt]` on Item, `[userId, updatedAt]` and `[userId, isFavorite]` on Collection
+- ~~Add `url = env("DATABASE_URL")` to datasource block~~ — Not supported in Prisma 7; adapter pattern is correct
+- [x] Add `userId` to `Tag` model to scope tags per user instead of global sharing
+
+### Low
+
+- [x] Deduplicate `ICON_MAP` in `Sidebar.tsx` — import from `@/components/dashboard/icon-map` instead of local copy
+- [x] Replace non-null assertion on `DATABASE_URL` in `src/lib/prisma.ts` with a proper guard and error message
 
 ## Notes
 
-<!-- Any extra notes -->
+Auth-related items (CRITICAL #1, HIGH #2) will be addressed when we implement authentication.
 
 ## History
 
