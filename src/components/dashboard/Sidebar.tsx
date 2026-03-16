@@ -25,9 +25,12 @@ import {
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useSidebar } from "./SidebarContext";
 import type { SidebarItemType } from "@/lib/db/items";
 import type { SidebarCollection } from "@/lib/db/collections";
+
+const PRO_TYPES = new Set(["file", "image"]);
 
 // ─── Icon Map ────────────────────────────────────────────────────────────────
 
@@ -113,6 +116,11 @@ function TypeItem({ type, isOpen }: { type: SidebarItemType; isOpen: boolean }) 
       >
         {displayName(type.name)}
       </span>
+      {isOpen && PRO_TYPES.has(type.name) && (
+        <Badge variant="secondary" className="h-4 px-1.5 text-[10px] font-semibold tracking-wide">
+          PRO
+        </Badge>
+      )}
       {isOpen && (
         <span className="text-xs text-muted-foreground tabular-nums">{type.count}</span>
       )}
