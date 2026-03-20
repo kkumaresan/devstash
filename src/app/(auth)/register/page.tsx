@@ -40,7 +40,7 @@ export default function RegisterPage() {
       return;
     }
 
-    toast.success("Account created! Redirecting to sign in...");
+    toast.success(data.message || "Check your email to verify your account.");
     router.push("/sign-in");
   }
 
