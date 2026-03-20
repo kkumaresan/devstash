@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +14,13 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -37,10 +36,11 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error || "Something went wrong");
+      toast.error(data.error || "Something went wrong");
       return;
     }
 
+    toast.success("Account created! Redirecting to sign in...");
     router.push("/sign-in");
   }
 
@@ -101,10 +101,6 @@ export default function RegisterPage() {
             required
           />
         </div>
-
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creating account..." : "Create account"}
