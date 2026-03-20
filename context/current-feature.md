@@ -30,3 +30,4 @@ Not Started
 - Auth Phase 1: NextAuth v5 with GitHub OAuth, split config for edge compatibility, Prisma adapter with JWT strategy, proxy-based dashboard route protection, session type extensions
 - Auth Phase 2: Credentials provider with email/password registration, bcrypt validation, POST /api/auth/register endpoint
 - Auth Phase 3: Custom sign-in/register pages, reusable UserAvatar component, sidebar user menu with session data and sign-out dropdown
+- Toast Notifications: Sonner toast for registration success/error, global Toaster in root layout
