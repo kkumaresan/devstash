@@ -1,28 +1,16 @@
-# Current Feature: Forgot Password
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add "Forgot password?" link on the sign-in page
-- Create `/forgot-password` page with email input form
-- Create `POST /api/auth/forgot-password` endpoint that generates a reset token (reusing `VerificationToken` model) and sends a reset email via Resend
-- Create `sendPasswordResetEmail()` in `src/lib/email.ts`
-- Add `generatePasswordResetToken()` and `getPasswordResetTokenByToken()` in `src/lib/tokens.ts` (reuse same pattern as verification tokens)
-- Create `/reset-password` page that validates the token and allows setting a new password
-- Create `POST /api/auth/reset-password` endpoint that validates token, hashes new password, updates user, and deletes token
-- Show appropriate success/error messages with toast notifications
-- Don't reveal whether an email exists in the system (security best practice)
+<!-- Define goals here -->
 
 ## Notes
 
-- Reuse existing `VerificationToken` model — differentiate reset tokens by using a prefix or separate identifier pattern (e.g., `reset:email` as identifier)
-- Reuse existing Resend integration from `src/lib/email.ts`
-- Token expiry: 1 hour (same as email verification)
-- Follow existing auth page patterns from sign-in/register pages
-- Password requirements: same as registration (match existing validation)
+<!-- Additional context -->
 
 ## History
 
@@ -45,3 +33,4 @@ In Progress
 - Toast Notifications: Sonner toast for registration success/error, global Toaster in root layout
 - Email Verification: Resend email on register, verification token with 1-hour expiry, /verify-email page, block unverified sign-in
 - Email Verification Toggle: EMAIL_VERIFICATION_ENABLED env var to enable/disable email verification, defaults to disabled for development
+- Forgot Password: forgot password flow with reset email via Resend, reuse VerificationToken with reset: prefix, /forgot-password and /reset-password pages, color-coded Sonner toasts with richColors
