@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, { maxRequests: 5, windowSeconds: 900 });
+  if (limited) return limited;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +36,13 @@ export async function POST(request: Request) {
   if (newPassword.length < 8) {
     return NextResponse.json(
       { error: "Password must be at least 8 characters" },
+      { status: 400 }
+    );
+  }
+
+  if (newPassword.length > 128) {
+    return NextResponse.json(
+      { error: "Password must be 128 characters or fewer" },
       { status: 400 }
     );
   }

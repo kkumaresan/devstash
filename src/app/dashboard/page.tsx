@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Pin } from "lucide-react";
+import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
@@ -11,18 +13,19 @@ import { getRecentItems, getPinnedItems, getItemStats } from "@/lib/db/items";
 
 export const dynamic = "force-dynamic";
 
-const DEMO_USER_ID = "user_demo";
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
   const [recentCollections, collectionStats, recentItems, pinnedItems, itemStats] =
     await Promise.all([
-      getRecentCollections(DEMO_USER_ID),
-      getCollectionStats(DEMO_USER_ID),
-      getRecentItems(DEMO_USER_ID),
-      getPinnedItems(DEMO_USER_ID),
-      getItemStats(DEMO_USER_ID),
+      getRecentCollections(session.user.id),
+      getCollectionStats(session.user.id),
+      getRecentItems(session.user.id),
+      getPinnedItems(session.user.id),
+      getItemStats(session.user.id),
     ]);
 
   return (

@@ -3,8 +3,11 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, { maxRequests: 5, windowSeconds: 3600 });
+  if (limited) return limited;
   const body = await request.json();
   const { name, email, password, confirmPassword } = body as {
     name?: string;
@@ -23,6 +26,20 @@ export async function POST(request: Request) {
   if (password !== confirmPassword) {
     return NextResponse.json(
       { error: "Passwords do not match" },
+      { status: 400 }
+    );
+  }
+
+  if (password.length < 8) {
+    return NextResponse.json(
+      { error: "Password must be at least 8 characters" },
+      { status: 400 }
+    );
+  }
+
+  if (password.length > 128) {
+    return NextResponse.json(
+      { error: "Password must be 128 characters or fewer" },
       { status: 400 }
     );
   }

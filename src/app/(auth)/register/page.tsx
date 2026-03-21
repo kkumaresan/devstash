@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Github } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,24 @@ export default function RegisterPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Get started with DevStash
         </p>
+      </div>
+
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+      >
+        <Github size={16} />
+        Sign up with GitHub
+      </Button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">or</span>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

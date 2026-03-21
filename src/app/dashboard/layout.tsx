@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import TopBar from "@/components/dashboard/TopBar";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { SidebarProvider } from "@/components/dashboard/SidebarContext";
@@ -7,16 +9,17 @@ import { getSidebarCollections } from "@/lib/db/collections";
 
 export const dynamic = "force-dynamic";
 
-const DEMO_USER_ID = "user_demo";
-
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
   const [itemTypes, sidebarCollections] = await Promise.all([
-    getItemTypesWithCounts(DEMO_USER_ID),
-    getSidebarCollections(DEMO_USER_ID),
+    getItemTypesWithCounts(session.user.id),
+    getSidebarCollections(session.user.id),
   ]);
 
   return (

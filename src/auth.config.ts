@@ -17,4 +17,13 @@ export default {
       authorize: () => null,
     }),
   ],
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+
+      if (isOnDashboard && !isLoggedIn) return false; // redirects to signIn page
+      return true;
+    },
+  },
 } satisfies NextAuthConfig;
