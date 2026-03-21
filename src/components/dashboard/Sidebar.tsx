@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Star,
   LogOut,
+  User,
 } from "lucide-react";
 import {
   Collapsible,
@@ -19,6 +20,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -90,10 +92,12 @@ function UserSection({ isOpen }: { isOpen: boolean }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-48">
           <DropdownMenuItem
-            render={<Link href="/profile" />}
+            render={<Link href="/dashboard/profile" />}
           >
+            <User size={14} />
             Profile
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/sign-in" })}
           >
