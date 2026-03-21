@@ -32,3 +32,4 @@ Not Started
 - Auth Phase 3: Custom sign-in/register pages, reusable UserAvatar component, sidebar user menu with session data and sign-out dropdown
 - Toast Notifications: Sonner toast for registration success/error, global Toaster in root layout
 - Email Verification: Resend email on register, verification token with 1-hour expiry, /verify-email page, block unverified sign-in
+- Email Verification Toggle: EMAIL_VERIFICATION_ENABLED env var to enable/disable email verification, defaults to disabled for development
