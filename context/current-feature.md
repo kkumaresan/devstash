@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Forgot Password
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- Define goals here -->
+- Add "Forgot password?" link on the sign-in page
+- Create `/forgot-password` page with email input form
+- Create `POST /api/auth/forgot-password` endpoint that generates a reset token (reusing `VerificationToken` model) and sends a reset email via Resend
+- Create `sendPasswordResetEmail()` in `src/lib/email.ts`
+- Add `generatePasswordResetToken()` and `getPasswordResetTokenByToken()` in `src/lib/tokens.ts` (reuse same pattern as verification tokens)
+- Create `/reset-password` page that validates the token and allows setting a new password
+- Create `POST /api/auth/reset-password` endpoint that validates token, hashes new password, updates user, and deletes token
+- Show appropriate success/error messages with toast notifications
+- Don't reveal whether an email exists in the system (security best practice)
 
 ## Notes
 
-<!-- Additional context -->
+- Reuse existing `VerificationToken` model — differentiate reset tokens by using a prefix or separate identifier pattern (e.g., `reset:email` as identifier)
+- Reuse existing Resend integration from `src/lib/email.ts`
+- Token expiry: 1 hour (same as email verification)
+- Follow existing auth page patterns from sign-in/register pages
+- Password requirements: same as registration (match existing validation)
 
 ## History
 
