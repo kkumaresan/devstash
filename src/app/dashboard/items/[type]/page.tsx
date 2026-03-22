@@ -1,11 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { getItemsByType } from "@/lib/db/items";
 import { ICON_MAP } from "@/components/dashboard/icon-map";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
-
-const DEMO_USER_ID = "user_demo";
 
 const TYPE_TITLES: Record<string, string> = {
   snippet: "Snippets",
@@ -22,8 +21,11 @@ export default async function ItemsListPage({
 }: {
   params: Promise<{ type: string }>;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
   const { type } = await params;
-  const { items, itemType } = await getItemsByType(DEMO_USER_ID, type);
+  const { items, itemType } = await getItemsByType(session.user.id, type);
 
   if (!itemType) notFound();
 

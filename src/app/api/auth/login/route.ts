@@ -31,8 +31,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    // NextAuth may throw a redirect on success — let Next.js handle it
-    if (isRedirectError(error)) throw error;
+    // NextAuth v5 server-side signIn always throws a redirect on success.
+    // The session cookie is already set — return success JSON instead of re-throwing.
+    if (isRedirectError(error)) {
+      return NextResponse.json({ success: true });
+    }
 
     if (error instanceof AuthError) {
       if (error.message === "EMAIL_NOT_VERIFIED" || error.cause?.err?.message === "EMAIL_NOT_VERIFIED") {

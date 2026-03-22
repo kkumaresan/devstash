@@ -1,27 +1,32 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Pin } from "lucide-react";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { getRecentCollections, getCollectionStats } from "@/lib/db/collections";
 import { getRecentItems, getPinnedItems, getItemStats } from "@/lib/db/items";
+import { auth } from "@/auth";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
-const DEMO_USER_ID = "user_demo";
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
+  const userId = session.user.id;
+
   const [recentCollections, collectionStats, recentItems, pinnedItems, itemStats] =
     await Promise.all([
-      getRecentCollections(DEMO_USER_ID),
-      getCollectionStats(DEMO_USER_ID),
-      getRecentItems(DEMO_USER_ID),
-      getPinnedItems(DEMO_USER_ID),
-      getItemStats(DEMO_USER_ID),
+      getRecentCollections(userId),
+      getCollectionStats(userId),
+      getRecentItems(userId),
+      getPinnedItems(userId),
+      getItemStats(userId),
     ]);
 
   return (

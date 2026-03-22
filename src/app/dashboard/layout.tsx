@@ -1,22 +1,27 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import TopBar from "@/components/dashboard/TopBar";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { SidebarProvider } from "@/components/dashboard/SidebarContext";
 import { getItemTypesWithCounts } from "@/lib/db/items";
 import { getSidebarCollections } from "@/lib/db/collections";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
-
-const DEMO_USER_ID = "user_demo";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
+  const userId = session.user.id;
+
   const [itemTypes, sidebarCollections] = await Promise.all([
-    getItemTypesWithCounts(DEMO_USER_ID),
-    getSidebarCollections(DEMO_USER_ID),
+    getItemTypesWithCounts(userId),
+    getSidebarCollections(userId),
   ]);
 
   return (
@@ -25,6 +30,7 @@ export default async function DashboardLayout({
         <TopBar />
         <div className="flex flex-1 min-h-0">
           <Sidebar
+            user={session.user}
             itemTypes={itemTypes}
             favoriteCollections={sidebarCollections.favorites}
             recentCollections={sidebarCollections.recents}

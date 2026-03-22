@@ -34,6 +34,7 @@ export default function SignInPage() {
         return;
       }
 
+      router.refresh();
       router.push("/dashboard");
     } catch {
       toast.error("Something went wrong. Please try again.");

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -62,7 +62,14 @@ function displayName(name: string): string {
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
+interface SidebarUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
 interface SidebarProps {
+  user: SidebarUser;
   itemTypes: SidebarItemType[];
   favoriteCollections: SidebarCollection[];
   recentCollections: SidebarCollection[];
@@ -70,23 +77,20 @@ interface SidebarProps {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function UserSection({ isOpen }: { isOpen: boolean }) {
-  const { data: session } = useSession();
-  const user = session?.user;
-
+function UserSection({ isOpen, user }: { isOpen: boolean; user: SidebarUser }) {
   return (
     <div className="border-t border-border px-3 py-3">
       <DropdownMenu>
         <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md p-1 hover:bg-accent transition-colors text-left cursor-pointer">
           <UserAvatar
-            name={user?.name}
-            image={user?.image}
+            name={user.name}
+            image={user.image}
             className="h-7 w-7 shrink-0"
           />
           {isOpen && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-sm font-medium truncate">{user.name || "User"}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           )}
         </DropdownMenuTrigger>
@@ -140,6 +144,7 @@ function TypeItem({ type, isOpen }: { type: SidebarItemType; isOpen: boolean }) 
 
 function SidebarContent({
   isOpen,
+  user,
   itemTypes,
   favoriteCollections,
   recentCollections,
@@ -242,7 +247,7 @@ function SidebarContent({
       </div>
 
       {/* User Avatar — pinned to bottom */}
-      <UserSection isOpen={isOpen} />
+      <UserSection isOpen={isOpen} user={user} />
     </div>
   );
 }
@@ -250,6 +255,7 @@ function SidebarContent({
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function Sidebar({
+  user,
   itemTypes,
   favoriteCollections,
   recentCollections,
@@ -265,6 +271,7 @@ export default function Sidebar({
       >
         <SidebarContent
           isOpen={isOpen}
+          user={user}
           itemTypes={itemTypes}
           favoriteCollections={favoriteCollections}
           recentCollections={recentCollections}
@@ -276,6 +283,7 @@ export default function Sidebar({
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent
             isOpen={true}
+            user={user}
             itemTypes={itemTypes}
             favoriteCollections={favoriteCollections}
             recentCollections={recentCollections}
