@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,7 @@ export default function TopBar() {
         >
           <Menu size={18} />
         </Button>
-        <span className="text-lg font-semibold text-foreground">DevStash</span>
+        <Link href="/dashboard" className="text-lg font-semibold text-foreground hover:text-foreground/80 transition-colors">DevStash</Link>
       </div>
       <div className="flex items-center gap-3">
         <Input

@@ -13,7 +13,7 @@ export function ItemCard({ item }: { item: DashboardItem }) {
 
   return (
     <Card
-      className="border-l-3 p-3"
+      className="border-l-3 p-5"
       style={{ borderLeftColor: item.itemType.color }}
     >
       <div className="flex items-start gap-3">

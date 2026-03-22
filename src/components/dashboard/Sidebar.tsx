@@ -115,7 +115,7 @@ function TypeItem({ type, isOpen }: { type: SidebarItemType; isOpen: boolean }) 
 
   return (
     <Link
-      href={`/items/${type.name}`}
+      href={`/dashboard/items/${type.name}`}
       className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
     >
       {Icon && <Icon size={16} style={{ color: type.color }} className="shrink-0" />}
@@ -152,13 +152,14 @@ function SidebarContent({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-border shrink-0">
-        <span
-          className={`font-semibold text-sm transition-[opacity,width] duration-200 overflow-hidden whitespace-nowrap ${
+        <Link
+          href="/dashboard"
+          className={`font-semibold text-sm transition-[opacity,width] duration-200 overflow-hidden whitespace-nowrap hover:text-foreground/80 ${
             isOpen ? "opacity-100 w-auto" : "opacity-0 w-0"
           }`}
         >
           DevStash
-        </span>
+        </Link>
         <Button
           variant="ghost"
           size="icon"

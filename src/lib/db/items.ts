@@ -95,6 +95,24 @@ export async function getItemStats(userId: string) {
   return { totalItems, favoriteItems };
 }
 
+export async function getItemsByType(
+  userId: string,
+  typeName: string,
+): Promise<{ items: DashboardItem[]; itemType: ItemTypeInfo | null }> {
+  const type = await prisma.itemType.findFirst({
+    where: {
+      name: typeName,
+      OR: [{ isSystem: true }, { userId }],
+    },
+    select: { id: true, name: true, icon: true, color: true },
+  });
+
+  if (!type) return { items: [], itemType: null };
+
+  const items = await queryItems({ userId, itemTypeId: type.id }, 100);
+  return { items: items.map(mapItem), itemType: type };
+}
+
 // ─── Sidebar Queries ────────────────────────────────────────────────────────
 
 export interface SidebarItemType {
