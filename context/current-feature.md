@@ -1,24 +1,16 @@
-# Current Feature: Fix GitHub OAuth Redirect Issue
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- GitHub sign-in works in a single click (no double-click needed)
-- Replace client-side `signIn` with server-side `signIn` via Server Action
-- Create `src/actions/auth.ts` with `signInWithGitHub` server action
-- Update `sign-in-form.tsx` to use form action instead of onClick handler
-- Build passes with no errors
+<!-- Define goals here -->
 
 ## Notes
 
-- Root cause: client-side `signIn` from `next-auth/react` has unreliable redirect behavior
-- Solution: use server-side `signIn` from `@/auth` (recommended NextAuth v5 pattern)
-- Use `redirectTo` (v5) not `callbackUrl` (v4)
-- No SessionProvider needed
-- Keep credentials login as-is (works fine with `redirect: false`)
+<!-- Additional context -->
 
 ## History
 
@@ -44,3 +36,4 @@ In Progress
 - Forgot Password: forgot password flow with reset email via Resend, reuse VerificationToken with reset: prefix, /forgot-password and /reset-password pages, color-coded Sonner toasts with richColors
 - Profile Page: user info with avatar, usage stats with per-type breakdown, change password (credentials users only), delete account with confirmation dialog, AlertDialog component
 - Rate Limiting: Upstash Redis rate limiting on auth endpoints (login, register, forgot-password, reset-password, resend-verification), reusable utility, custom login endpoint, fail-open, toast errors
+- GitHub OAuth Redirect Fix: server-side signIn via Server Action to fix double-click redirect issue, created src/actions/auth.ts, updated sign-in page form
