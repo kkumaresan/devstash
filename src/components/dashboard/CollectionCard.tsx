@@ -8,9 +8,9 @@ export function CollectionCard({ collection }: { collection: DashboardCollection
   return (
     <Link href={`/collections/${collection.id}`}>
       <Card
-        className="h-full hover:bg-accent/50 transition-colors cursor-pointer border-t-2"
+        className="h-full hover:bg-accent/50 transition-colors cursor-pointer border-l-3"
         style={{
-          borderTopColor: collection.dominantType?.color ?? "transparent",
+          borderLeftColor: collection.dominantType?.color ?? "transparent",
         }}
       >
         <CardContent className="p-4 flex flex-col gap-2 h-full">

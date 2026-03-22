@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Pin } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
-import { ItemRow } from "@/components/dashboard/ItemRow";
+import { ItemCard } from "@/components/dashboard/ItemCard";
 import { getRecentCollections, getCollectionStats } from "@/lib/db/collections";
 import { getRecentItems, getPinnedItems, getItemStats } from "@/lib/db/items";
 
@@ -63,13 +62,11 @@ export default async function DashboardPage() {
             <Pin size={14} className="text-muted-foreground" />
             <h2 className="text-base font-semibold">Pinned</h2>
           </div>
-          <Card>
-            <CardContent className="p-4">
-              {pinnedItems.map((item) => (
-                <ItemRow key={item.id} item={item} />
-              ))}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 gap-3">
+            {pinnedItems.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
         </section>
       )}
 
@@ -81,13 +78,11 @@ export default async function DashboardPage() {
             View all
           </Link>
         </div>
-        <Card>
-          <CardContent className="p-4">
-            {recentItems.map((item) => (
-              <ItemRow key={item.id} item={item} />
-            ))}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 gap-3">
+          {recentItems.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </div>
       </section>
     </div>
   );
