@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Github } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,32 +14,32 @@ export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setLoading(false);
+      const data = await res.json();
 
-    if (result?.error) {
-      if (result.code === "EMAIL_NOT_VERIFIED") {
-        setError("Please verify your email before signing in. Check your inbox.");
-      } else {
-        setError("Invalid email or password");
+      if (!res.ok) {
+        toast.error(data.error || "Invalid email or password");
+        return;
       }
-      return;
-    }
 
-    router.push("/dashboard");
+      router.push("/dashboard");
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -92,10 +93,6 @@ export default function SignInPage() {
             required
           />
         </div>
-
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
