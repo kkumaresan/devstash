@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Github } from "lucide-react";
 import { toast } from "sonner";
+import { signInWithGitHub } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,14 +51,12 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-      >
-        <Github size={16} />
-        Sign in with GitHub
-      </Button>
+      <form action={signInWithGitHub}>
+        <Button variant="outline" className="w-full" type="submit">
+          <Github size={16} />
+          Sign in with GitHub
+        </Button>
+      </form>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
