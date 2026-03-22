@@ -1,22 +1,16 @@
-# Current Feature: Items List View
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Create dynamic route `/items/[type]` (e.g., /items/snippets, /items/notes)
-- Fetch and display items filtered by type
-- Responsive grid of ItemCard components
-- Two columns on medium and up
-- Each card has left border colored by item type
-- Follow existing codebase patterns
+<!-- Define goals here -->
 
 ## Notes
 
-- Dynamic listing page at `/items/[type]` that displays type-filtered items
-- Reuse existing ItemCard pattern and type color mappings from the dashboard
+<!-- Additional context -->
 
 ## History
 
@@ -43,3 +37,4 @@ In Progress
 - Profile Page: user info with avatar, usage stats with per-type breakdown, change password (credentials users only), delete account with confirmation dialog, AlertDialog component
 - Rate Limiting: Upstash Redis rate limiting on auth endpoints (login, register, forgot-password, reset-password, resend-verification), reusable utility, custom login endpoint, fail-open, toast errors
 - GitHub OAuth Redirect Fix: server-side signIn via Server Action to fix double-click redirect issue, created src/actions/auth.ts, updated sign-in page form
+- Items List View: dynamic /dashboard/items/[type] route with type-filtered items, 2-col responsive grid, DevStash nav links to dashboard, increased card padding
