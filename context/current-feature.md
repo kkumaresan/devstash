@@ -1,25 +1,16 @@
-# Current Feature: Rate Limiting for Auth
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add rate limiting to auth-related API routes using Upstash Redis + `@upstash/ratelimit`
-- Protect login (5/15min), register (3/1hr), forgot-password (3/1hr), reset-password (5/15min), resend-verification (3/15min)
-- Create reusable `src/lib/rate-limit.ts` utility with sliding window algorithm
-- Key by IP or IP + email depending on endpoint
-- Return 429 responses with `Retry-After` header and user-friendly error messages
-- Display rate limit errors via toast notifications on the frontend
-- Fail open if Upstash is unavailable
+<!-- Define goals here -->
 
 ## Notes
 
-- Upstash free tier: 10k requests/day (sufficient for auth limiting)
-- Env vars needed: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
-- Login limiting with NextAuth credentials may need custom sign-in handler
-- Extract IP from `x-forwarded-for` header (Vercel) or request
+<!-- Additional context -->
 
 ## History
 
@@ -44,3 +35,4 @@ In Progress
 - Email Verification Toggle: EMAIL_VERIFICATION_ENABLED env var to enable/disable email verification, defaults to disabled for development
 - Forgot Password: forgot password flow with reset email via Resend, reuse VerificationToken with reset: prefix, /forgot-password and /reset-password pages, color-coded Sonner toasts with richColors
 - Profile Page: user info with avatar, usage stats with per-type breakdown, change password (credentials users only), delete account with confirmation dialog, AlertDialog component
+- Rate Limiting: Upstash Redis rate limiting on auth endpoints (login, register, forgot-password, reset-password, resend-verification), reusable utility, custom login endpoint, fail-open, toast errors
